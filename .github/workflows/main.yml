@@ -10,23 +10,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Descomprimir proyecto
+        run: |
+          unzip -o "LumenLauncher (2).zip" -d tmp_extract
+          cp -r tmp_extract/LumenLauncher/app .
+          cp tmp_extract/LumenLauncher/settings.gradle.kts .
+          cp tmp_extract/LumenLauncher/build.gradle.kts .
+          cp tmp_extract/LumenLauncher/gradle.properties .
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
 
       - name: Crear keystore de firma
         run: |
+          mkdir -p app/src/main/assets
           keytool -genkeypair -keystore app/src/main/assets/lumen.p12 -storetype PKCS12 \
             -alias lumen -keyalg RSA -keysize 2048 -validity 9999 \
             -storepass lumen123 -keypass lumen123 -dname "CN=Lumen" -noprompt
 
       - name: Compilar APK debug
-        run: |
-          chmod +x gradlew 2>/dev/null || true
-          if [ -f gradlew ]; then ./gradlew :app:assembleDebug; else gradle :app:assembleDebug; fi
+        run: gradle :app:assembleDebug
 
       - uses: actions/upload-artifact@v4
         with:
